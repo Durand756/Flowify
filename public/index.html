@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatBot Manager - Automatisation Facebook</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar { min-height: 100vh; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
+        .nav-link { padding: 12px 20px; margin: 2px 0; border-radius: 8px; transition: all 0.3s; }
+        .nav-link:hover, .nav-link.active { background: #007bff; color: white !important; }
+        .card { border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .btn-primary { background: linear-gradient(45deg, #007bff, #0056b3); border: none; }
+        .table th { background: #f8f9fa; font-weight: 600; }
+        .status-active { color: #28a745; }
+        .status-inactive { color: #dc3545; }
+        .priority-high { background: #ff6b6b; color: white; }
+        .priority-medium { background: #ffa500; color: white; }
+        .priority-low { background: #6c757d; color: white; }
+        .loading { display: none; text-align: center; padding: 20px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Login Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Connexion / Inscription</h5>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-tabs mb-3" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#login-tab">Connexion</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#register-tab">Inscription</a>
+                        </li>
+                    </ul>
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="login-tab">
+                            <form id="loginForm">
+                                <div class="mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" name="email" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Mot de passe</label>
+                                    <input type="password" class="form-control" name="password" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">Se connecter</button>
+                            </form>
+                        </div>
+                        <div class="tab-pane fade" id="register-tab">
+                            <form id="registerForm">
+                                <div class="mb-3">
+                                    <label class="form-label">Nom d'utilisateur</label>
+                                    <input type="text" class="form-control" name="username" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" name="email" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Mot de passe</label>
+                                    <input type="password" class="form-control" name="password" required>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100">S'inscrire</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block bg-white sidebar collapse" id="sidebarMenu">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4">
+                        <h4 class="text-primary">ChatBot Manager</h4>
+                        <small class="text-muted" id="userInfo"></small>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#" data-section="dashboard">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-section="pages">
+                                <i class="fab fa-facebook"></i> Pages Facebook
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-section="responses">
+                                <i class="fas fa-reply"></i> Réponses Prédéfinies
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-section="ai-config">
+                                <i class="fas fa-robot"></i> Configuration IA
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-section="history">
+                                <i class="fas fa-history"></i> Historique
+                            </a>
+                        </li>
+                    </ul>
+                    <hr>
+                    <button class="btn btn-outline-danger" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Déconnexion
+                    </button>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- Dashboard Section -->
+                <div id="dashboard-section" class="section">
+                    <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">Dashboard</h1>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="card text-white bg-primary">
+                                <div class="card-body">
+                                    <h5 class="card-title">Pages Connectées</h5>
+                                    <h2 id="totalPages">0</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-white bg-success">
+                                <div class="card-body">
+                                    <h5 class="card-title">Réponses Actives</h5>
+                                    <h2 id="totalResponses">0</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-white bg-info">
+                                <div class="card-body">
+                                    <h5 class="card-title">Messages Traités</h5>
+                                    <h2 id="totalMessages">0</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-white bg-warning">
+                                <div class="card-body">
+                                    <h5 class="card-title">IA Configurée</h5>
+                                    <h2 id="aiConfigured">0</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pages Section -->
+                <div id="pages-section" class="section hidden">
+                    <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">Pages Facebook</h1>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPageModal">
+                            <i class="fas fa-plus"></i> Ajouter une Page
+                        </button>
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nom de la Page</th>
+                                            <th>ID de Page</th>
+                                            <th>Statut</th>
+                                            <th>Date d'ajout</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="pagesTable">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Responses Section -->
+                <div id="responses-section" class="section hidden">
+                    <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">Réponses Prédéfinies</h1>
+                        <div>
+                            <select class="form-select d-inline-block me-2" style="width: auto;" id="pageSelect">
+                                <option value="">Sélectionner une page</option>
+                            </select>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addResponseModal">
+                                <i class="fas fa-plus"></i> Nouvelle Réponse
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Mot-clé</th>
+                                            <th>Réponse</th>
+                                            <th>Priorité</th>
+                                            <th>Statut</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="responsesTable">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Config Section -->
+                <div id="ai-config-section" class="section hidden">
+                    <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">Configuration IA</h1>
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
+                            <form id="aiConfigForm">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Page Facebook</label>
+                                            <select class="form-select" name="pageId" id="aiPageSelect" required>
+                                                <option value="">Sélectionner une page</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Fournisseur IA</label>
+                                            <select class="form-select" name="provider" required>
+                                                <option value="">Choisir un fournisseur</option>
+                                                <option value="openai">OpenAI</option>
+                                                <option value="mistral">Mistral AI</option>
+                                                <option value="claude">Claude</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Modèle</label>
+                                            <select class="form-select" name="model" required>
+                                                <option value="">Choisir un modèle</option>
+                                                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                                <option value="gpt-4">GPT-4</option>
+                                                <option value="mistral-small">Mistral Small</option>
+                                                <option value="mistral-large">Mistral Large</option>
+                                                <option value="claude-3-sonnet">Claude 3 Sonnet</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Clé API</label>
+                                            <input type="password" class="form-control" name="apiKey" placeholder="Votre clé API" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Température (0.1 - 1.0)</label>
+                                            <input type="number" class="form-control" name="temperature" min="0.1" max="1.0" step="0.1" value="0.7">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Ton de réponse</label>
+                                            <select class="form-select" name="tone">
+                                                <option value="friendly">Amical</option>
+                                                <option value="professional">Professionnel</option>
+                                                <option value="humorous">Humoristique</option>
+                                                <option value="formal">Formel</option>
+                                                <option value="casual">Décontracté</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Instructions personnalisées</label>
+                                    <textarea class="form-control" name="instructions" rows="4" placeholder="Instructions pour l'IA sur comment répondre..."></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i> Enregistrer Configuration
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Section -->
+                <div id="history-section" class="section hidden">
+                    <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h1 class="h2">Historique des Messages</h1>
+                        <select class="form-select" style="width: auto;" id="historyPageSelect">
+                            <option value="">Toutes les pages</option>
+                        </select>
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Expéditeur</th>
+                                            <th>Message</th>
+                                            <th>Réponse</th>
+                                            <th>Type</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="historyTable">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Add Page Modal -->
+    <div class="modal fade" id="addPageModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Ajouter une Page Facebook</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addPageForm">
+                        <div class="mb-3">
+                            <label class="form-label">ID de la Page</label>
+                            <input type="text" class="form-control" name="pageId" placeholder="123456789..." required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nom de la Page</label>
+                            <input type="text" class="form-control" name="pageName" placeholder="Ma Page Facebook" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Token d'Accès</label>
+                            <textarea class="form-control" name="accessToken" rows="3" placeholder="EAAxxxxx..." required></textarea>
+                            <div class="form-text">Token d'accès long terme de votre page Facebook</div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" form="addPageForm" class="btn btn-primary">Ajouter</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Response Modal -->
+    <div class="modal fade" id="addResponseModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nouvelle Réponse Prédéfinie</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addResponseForm">
+                        <div class="mb-3">
+                            <label class="form-label">Page Facebook</label>
+                            <select class="form-select" name="pageId" id="responsePageSelect" required>
+                                <option value="">Sélectionner une page</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Mot-clé</label>
+                            <input type="text" class="form-control" name="keyword" placeholder="bonjour, prix, info..." required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Réponse</label>
+                            <textarea class="form-control" name="response" rows="3" placeholder="La réponse à envoyer..." required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Priorité</label>
+                            <select class="form-select" name="priority">
+                                <option value="1">Basse (1)</option>
+                                <option value="2">Moyenne (2)</option>
+                                <option value="3">Haute (3)</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" form="addResponseForm" class="btn btn-primary">Ajouter</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
