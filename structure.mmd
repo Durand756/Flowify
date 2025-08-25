@@ -1,0 +1,111 @@
+flowchart TD
+    A[👤 Visiteur arrive sur le site] --> B{Possède un compte?}
+    
+    B -->|Non| C[📝 Inscription]
+    B -->|Oui| D[🔐 Connexion]
+    
+    C --> C1[Saisit: nom, email, mot de passe]
+    C1 --> C2[Validation des données]
+    C2 -->|✅ Valide| C3[Compte créé avec succès]
+    C2 -->|❌ Erreur| C4[Message d'erreur]
+    C4 --> C1
+    C3 --> D
+    
+    D --> D1[Saisit: email + mot de passe]
+    D1 --> D2[Vérification identifiants]
+    D2 -->|✅ Correct| D3[Token JWT généré]
+    D2 -->|❌ Incorrect| D4[Erreur de connexion]
+    D4 --> D1
+    
+    D3 --> E[🏠 Dashboard Principal]
+    
+    E --> E1[📊 Affiche statistiques:<br/>- Pages connectées: 0<br/>- Réponses actives: 0<br/>- Messages traités: 0<br/>- IA configurée: 0]
+    
+    E1 --> F{Que voulez-vous faire?}
+    
+    F -->|Connecter une page| G[📘 Section Pages Facebook]
+    F -->|Configurer réponses| H[💬 Section Réponses Prédéfinies]
+    F -->|Setup IA| I[🤖 Section Configuration IA]
+    F -->|Voir historique| J[📜 Section Historique]
+    
+    %% GESTION DES PAGES FACEBOOK
+    G --> G1[➕ Ajouter une Page]
+    G1 --> G2[Saisit:<br/>- ID de la page<br/>- Nom de la page<br/>- Token d'accès Facebook]
+    G2 --> G3[Validation du token avec Facebook API]
+    G3 -->|✅ Token valide| G4[Page ajoutée et sauvée en DB]
+    G3 -->|❌ Token invalide| G5[Erreur: Token ou permissions incorrects]
+    G5 --> G2
+    G4 --> G6[Page visible dans la liste]
+    G6 --> G7{Configurer le webhook?}
+    G7 -->|Oui| G8[Setup automatique webhook Facebook]
+    G7 -->|Plus tard| F
+    G8 --> G9[✅ Page prête à recevoir des messages]
+    G9 --> F
+    
+    %% RÉPONSES PRÉDÉFINIES
+    H --> H1[Sélectionne une page connectée]
+    H1 --> H2[➕ Ajouter une Réponse]
+    H2 --> H3[Configure:<br/>- Mot-clé déclencheur<br/>- Réponse à envoyer<br/>- Priorité 1-3<br/>- Type de correspondance]
+    H3 --> H4[Sauvegarde en base de données]
+    H4 --> H5[✅ Réponse prédéfinie active]
+    H5 --> H6{Ajouter d'autres réponses?}
+    H6 -->|Oui| H2
+    H6 -->|Non| F
+    
+    %% CONFIGURATION IA
+    I --> I1[Choisit une page]
+    I1 --> I2[Configure l'IA:<br/>- Provider OpenAI/Mistral/Claude<br/>- Modèle GPT-4/Claude-3/etc.<br/>- Clé API personnelle<br/>- Température 0.1-1.0<br/>- Ton: amical/professionnel/etc.<br/>- Instructions personnalisées]
+    I2 --> I3[Test de la clé API]
+    I3 -->|✅ Clé valide| I4[Configuration IA sauvée]
+    I3 -->|❌ Clé invalide| I5[Erreur: Vérifiez votre clé API]
+    I5 --> I2
+    I4 --> I6[✅ IA active comme fallback]
+    I6 --> F
+    
+    %% HISTORIQUE
+    J --> J1[Sélectionne une page ou toutes]
+    J1 --> J2[📋 Affiche historique des messages:<br/>- Date/heure<br/>- Expéditeur<br/>- Message reçu<br/>- Réponse envoyée<br/>- Type: prédéfinie/IA/aucune]
+    J2 --> F
+    
+    %% TRAITEMENT AUTOMATIQUE DES MESSAGES
+    K[📱 Message reçu sur page Facebook] --> K1[Webhook déclenché]
+    K1 --> K2[🔍 Recherche réponse prédéfinie]
+    K2 -->|✅ Mot-clé trouvé| K3[Envoie réponse prédéfinie]
+    K2 -->|❌ Aucun match| K4{IA configurée?}
+    
+    K4 -->|✅ Oui| K5[🤖 Génère réponse IA]
+    K4 -->|❌ Non| K6[Aucune réponse envoyée]
+    
+    K5 --> K7[Envoie réponse IA]
+    
+    K3 --> K8[📝 Sauvegarde dans historique]
+    K7 --> K8
+    K6 --> K8
+    
+    K8 --> K9[🔄 Met à jour statistiques dashboard]
+    K9 --> L[✅ Traitement terminé]
+    
+    %% MONITORING
+    M[⚡ Temps réel] --> M1[Dashboard se met à jour automatiquement]
+    M1 --> M2[📊 Nouvelles statistiques:<br/>- Pages: 2<br/>- Réponses: 15<br/>- Messages: 47<br/>- IA: 1]
+    
+    %% GESTION DU COMPTE
+    N[👤 Menu utilisateur] --> N1{Actions compte}
+    N1 -->|Paramètres| N2[⚙️ Modifier profil]
+    N1 -->|Déconnexion| N3[🚪 Logout + suppression token]
+    N3 --> A
+    
+    %% STYLES
+    classDef processBox fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef successBox fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef errorBox fill:#ffebee,stroke:#c62828,stroke-width:2px
+    classDef decisionBox fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    classDef aiBox fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef fbBox fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    
+    class C,D,G,H,I,J processBox
+    class C3,G4,G9,H5,I4,I6,L successBox
+    class C4,D4,G5,I5 errorBox
+    class B,F,G7,H6,K4,N1 decisionBox
+    class I,I1,I2,I4,K5,K7 aiBox
+    class G,G1,G2,G4,K,K1 fbBox
